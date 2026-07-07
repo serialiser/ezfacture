@@ -1,0 +1,14 @@
+# Normalisation des fins de ligne : LF partout (dépôt ET copie de travail).
+# Git auto-détecte les fichiers binaires et ne les modifie pas.
+* text=auto eol=lf
+
+# Fichiers spécifiques à Windows qui doivent rester en CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binaires explicites (par sécurité)
+*.xlsx binary
+*.png binary
+*.ico binary
+*.pdf binary

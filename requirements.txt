@@ -1,0 +1,14 @@
+customtkinter==5.2.2
+darkdetect==0.8.0
+packaging==24.0
+pywin32
+xlwings==0.31.2
+requests
+lxml
+saxonche
+Jinja2
+py-money
+factur-x
+pyinstaller
+pandas
+openpyxl
