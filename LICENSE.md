@@ -29,6 +29,6 @@ Ce projet utilise les composants tiers suivants, chacun distribué sous sa propr
 | [PyInstaller](https://github.com/pyinstaller/pyinstaller) | GPL-2.0-or-later |
 | [pandas](https://github.com/pandas-dev/pandas) | BSD-3-Clause |
 | [openpyxl](https://foss.heptapod.net/openpyxl/openpyxl) | MIT |
-| [python-en16931] (https://github.com/invinet/python-en16931) | Apache-2.0 |
+| [python-en16931](https://github.com/invinet/python-en16931) | Apache-2.0 |
 
 Le texte intégral de chaque licence est disponible dans le dépôt du projet correspondant ainsi que dans les distributions des paquets concernés.

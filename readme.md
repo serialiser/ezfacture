@@ -53,12 +53,9 @@ Si **une seule** de ces étapes échoue (Excel fermé, XML invalide, erreur PDF�
 la transaction est annulée (rollback) : le numéro **n'a jamais été écrit**. Comme
 rien n'a été consommé, **le même numéro sera réattribué à la tentative suivante**.
 
-### 2. Impossible d'effacer un numéro sans que cela se voie
+### 2. Protection contre les modifications
 
-Le fichier étant append-only, retirer une facture au milieu de la séquence
-créerait un trou — c'est précisément ce que la loi interdit. Pour rendre toute
-altération **détectable**, chaque entrée est protégée par une double chaîne de
-hachage :
+Pour rendre toute altération **détectable**, chaque entrée est protégée par une double chaîne de hachage :
 
 - `file_hash_before` : SHA-256 du fichier **avant** l'ajout de cette entrée
   (chaînage — chaque ligne dépend de tout ce qui précède) ;
