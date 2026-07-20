@@ -8,6 +8,7 @@ invoices.jsonl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -238,3 +239,5 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 file_version_info.txt
+
+CLAUDE.md

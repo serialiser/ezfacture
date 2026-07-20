@@ -33,7 +33,7 @@ def _make_version_info(version_str):
         StringStruct(u'FileVersion',      u'{vdot}'),
         StringStruct(u'InternalName',     u'ezfacture'),
         StringStruct(u'LegalCopyright',   u''),
-        StringStruct(u'OriginalFilename', u'main.exe'),
+        StringStruct(u'OriginalFilename', u'ezfacture-{version_str}.exe'),
         StringStruct(u'ProductName',      u'EzFacture'),
         StringStruct(u'ProductVersion',   u'{vdot}'),
       ])
@@ -74,7 +74,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='main',
+    name=f'ezfacture-{__version__}',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
