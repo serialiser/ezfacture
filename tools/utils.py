@@ -61,6 +61,50 @@ def resource_path(relative_path: str) -> Path:
     return (base_path / relative_path).resolve()
 
 
+def add_pdfa_srgb_output_intent(pdf_path):
+    """Ajoute un OutputIntent sRGB (profil ICC embarqué) au PDF pour vaidité PDF/A-3
+
+    Le PDF produit par Excel utilise DeviceRGB /
+    DeviceGray sans OutputIntent, ce qui est interdit en PDF/A. En ajoutant un
+    OutputIntent sRGB, ces espaces colorimétriques deviennent conformes.
+
+    Sans effet si un OutputIntent est déjà présent.
+    """
+    try:
+        import pikepdf
+    except ImportError:
+        logger.warning("pikepdf absent : OutputIntent PDF/A non ajouté.")
+        return
+
+    icc_path = resource_path("assets/sRGB.icc")
+    try:
+        icc_bytes = Path(icc_path).read_bytes()
+    except OSError as e:
+        logger.error(f"Profil ICC sRGB introuvable ({icc_path}) : {e}")
+        return
+
+    try:
+        with pikepdf.open(str(pdf_path), allow_overwriting_input=True) as pdf:
+            existing = pdf.Root.get("/OutputIntents")
+            if existing is not None and len(existing) > 0:
+                return  # déjà conforme
+
+            icc_stream = pikepdf.Stream(pdf, icc_bytes)
+            icc_stream.N = 3  # composants du profil (RGB)
+
+            output_intent = pdf.make_indirect(pikepdf.Dictionary(
+                Type=pikepdf.Name.OutputIntent,
+                S=pikepdf.Name("/GTS_PDFA1"),
+                OutputConditionIdentifier=pikepdf.String("sRGB"),
+                Info=pikepdf.String("sRGB IEC61966-2.1"),
+                DestOutputProfile=icc_stream,
+            ))
+            pdf.Root.OutputIntents = pikepdf.Array([output_intent])
+            pdf.save(str(pdf_path))
+    except Exception as e:
+        logger.error(f"Échec de l'ajout de l'OutputIntent PDF/A sur {pdf_path} : {e}")
+
+
 def close_all_protected_sheets():
     """
     Si Excel a déjà un / des fichier(s) ouvert en mode protégé au lancement de l'app, xlwings renvoie un objet ProtectedViewWindow au lieu d'un objet Book et on a des erreurs.

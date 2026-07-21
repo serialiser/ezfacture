@@ -140,6 +140,7 @@ class Invoice:
         self.invoice_type_code = 380
         self._issue_date = None
         self._due_date = None
+        self._delivery_date = None
         self._seller_party = None
         self._buyer_party = None
         self._templates = templates.get_template('invoice.xml')
@@ -412,6 +413,31 @@ class Invoice:
             self._due_date = date.strftime("%Y%m%d")  # Evolution O.M.
         elif isinstance(date, str):
             self._due_date = parse_date(date)
+        else:
+            raise ValueError("Unrecognized date")
+
+    @property
+    def delivery_date(self):
+        """Property: The actual delivery / supply date of the invoice (BT-72).
+
+        Same accepted formats as :meth:`issue_date` and :meth:`due_date`.
+        """
+        return self._delivery_date
+
+    @delivery_date.setter
+    def delivery_date(self, date):
+        """Set the delivery date of the invoice.
+
+        Stocke toujours une chaîne au format ``AAAAMMJJ`` (format 102 CII),
+        que l'entrée soit un ``datetime`` ou une chaîne, afin d'éviter tout
+        rendu de ``datetime`` brut dans le XML.
+        """
+        if not date:
+            return
+        elif isinstance(date, datetime):
+            self._delivery_date = date.strftime("%Y%m%d")
+        elif isinstance(date, str):
+            self._delivery_date = parse_date(date).strftime("%Y%m%d")
         else:
             raise ValueError("Unrecognized date")
 

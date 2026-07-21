@@ -360,12 +360,15 @@ class Controller:
             try:
                 # on vérifie que la cellule n'est pas vide
                 val = onglet[key].value
+                # une chaîne composée uniquement d'espaces est considérée vide
+                if isinstance(val, str):
+                    val = val.strip()
                 if required is True:
                     if val is None or val == "":
                         self.show_error_excel(key, "Valeur obligatoire")
                         raise ValueError(f"La cellule '{self.get_address(onglet[key])}' ({key}) contient une valeur vide ou nulle.")
-                
-                if data_type == "date":
+
+                if data_type == "date" and val not in (None, ""):
                     if not check_format_obj(datetime, val):
                         self.show_error_excel(key, "Format incorrect")
                         raise ValueError(f"La donnée de la cellule '{self.get_address(onglet[key])}' ({key}) n'est pas au bon format.")
@@ -376,7 +379,43 @@ class Controller:
             except BaseException as e:
                 raise ValueError(e)
 
-    @staticmethod 
+    # Noms de pays courants -> code ISO 3166-1 alpha-2 (CountryID Factur-X, BT-40/BT-55)
+    _COUNTRY_MAP = {
+        "france": "FR", "belgique": "BE", "belgium": "BE", "allemagne": "DE",
+        "germany": "DE", "espagne": "ES", "spain": "ES", "italie": "IT",
+        "italy": "IT", "luxembourg": "LU", "suisse": "CH", "switzerland": "CH",
+        "pays-bas": "NL", "netherlands": "NL", "portugal": "PT",
+        "royaume-uni": "GB", "united kingdom": "GB",
+    }
+
+    @classmethod
+    def normalize_country(cls, val):
+        """Retourne un code pays ISO 3166-1 alpha-2 (ex. 'France' -> 'FR')."""
+        if val is None:
+            return val
+        s = str(val).strip()
+        if len(s) == 2:
+            return s.upper()
+        return cls._COUNTRY_MAP.get(s.lower(), s)
+
+    @classmethod
+    def normalize_party_kwargs(cls, kw):
+        """Normalise sur place les données d'une partie (vendeur/acheteur).
+
+        - ``country`` -> code ISO 2 lettres ;
+        - ``postalzone`` -> chaîne sans décimale (Excel renvoie souvent 44000.0).
+        """
+        if "country" in kw:
+            kw["country"] = cls.normalize_country(kw["country"])
+
+        pz = kw.get("postalzone")
+        if isinstance(pz, float) and pz.is_integer():
+            kw["postalzone"] = str(int(pz))
+        elif pz is not None:
+            kw["postalzone"] = str(pz).strip()
+        return kw
+
+    @staticmethod
     def increment_fact_number(invoice_number):
         parts = invoice_number.split('-')
         last_number = int(parts[-1])
@@ -549,6 +588,11 @@ class Controller:
 
             kwargs_seller["tax_scheme"] = kwargs_buyer["tax_scheme"] = "VAT"
 
+            # Normalisation des données pour la conformité Factur-X (CountryID ISO,
+            # code postal sans décimale, etc.)
+            self.normalize_party_kwargs(kwargs_seller)
+            self.normalize_party_kwargs(kwargs_buyer)
+
         except BaseException:
             msg = "Erreur lors de la création du document."
             self.view.show_feedback(txt=msg, message_type="error", stack=True)
@@ -570,6 +614,11 @@ class Controller:
                 self.model.issue_date = self.get_value(self.doc.onglet, "date_facture", data_type="date")
                 if self.doc.type_doc == 'facture':
                     self.model.due_date = self.get_value(self.doc.onglet, "fact_date_echeance", data_type="date")
+                    livraison = self.get_value(self.doc.onglet, "fact_date_livraison", data_type="date", required=False)
+                else:
+                    livraison = None
+                # Date de livraison (BT-72) : cellule fact_date_livraison, à défaut la date de facture
+                self.model.delivery_date = livraison or self.model.issue_date
             except BaseException as e:
                 self.view.show_feedback(txt=str(e), message_type="error", stack=False)
                 logger.exception(f"Erreur dates : {e}")
@@ -681,6 +730,18 @@ class Controller:
         paid = True if self.doc.onglet['net_a_payer'].value == 0 else False
         self.model.profile_id = self.calculate_profile(type_presta, acompte, paid)
 
+        # Mentions légales françaises obligatoires (BR-FR-05 / BT-22),
+        # lues dans les cellules nommées PMD / PMT / AAB de l'onglet config.
+        try:
+            self.model.notes = [
+                {"code": code, "content": self.get_value(self.doc.onglet_config, code)}
+                for code in ("PMD", "PMT", "AAB")
+            ]
+        except BaseException as e:
+            self.view.show_feedback(txt=str(e), message_type="error", stack=True)
+            logger.exception(f"Erreur mentions légales : {e}")
+            raise ValueError(e)
+
         # Validation et création du document
         try:
             with Eztransaction() as tx:
@@ -706,7 +767,7 @@ class Controller:
 
                 # 5. Incorporation du XML dans le PDF
                 self.view.show_feedback(txt="-> Incorporation du xml...", stack=True)
-                tx.do(step_fn=lambda: generate_from_file(pdf_file=self.doc.pdf_path, xml=self.model.xml, flavor='factur-x'))
+                tx.do(step_fn=lambda: generate_from_file(pdf_file=self.doc.pdf_path, xml=self.model.xml, flavor='factur-x', check_schematron=True))
 
                 # 6. Réservation du numéro (LOCAL : PREPARE / API : création serveur)
                 prepared_entry_or_void = tx.do(

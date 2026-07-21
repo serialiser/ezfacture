@@ -14,14 +14,14 @@ import logging
 
 # None = automatique (selon la présence du backend API)
 # True = force le mode API ; False = force le mode local
-MODE_API = True
+MODE_API = False
 
 LOCAL_FILE = "invoices.jsonl"
 
 
 # Levels : DEBUG, INFO, WARNING, ERROR, CRITICAL
 # LEVEL = logging.WARNING if PROD else logging.DEBUG
-LEVEL = logging.DEBUG
+LEVEL = logging.WARNING
 HANDLERS = [logging.FileHandler("log.log", encoding='utf-8')]
 
 if LEVEL == logging.DEBUG:

@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 from datetime import datetime
 from controller.constantes import NAMES_FACT, NAMES_DEVIS, NAMES_AVOIR, DRAFT_PATH
+from tools.utils import add_pdfa_srgb_output_intent
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +168,8 @@ class Ezfacture:
 
         try:
             self.onglet.to_pdf(path=fact_path, show=False)  # Attention ne pas ouvrir le pdf ici, sinon on ne peut pas le supprimer si rollback
+            # Ajout d'un OutputIntent sRGB pour la conformité PDF/A-3 (Factur-X)
+            add_pdfa_srgb_output_intent(fact_path)
             # on stocke le chemin du pdf pour pouvoir facilement créer ensuite le doc facturX
             self.pdf_path = fact_path
 

@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_all
 
 project_path = Path('./')
 sys.path.insert(0, str(project_path))
@@ -51,18 +51,22 @@ with open(_version_file, 'w', encoding='utf-8') as _f:
 hidden_imports = collect_submodules('xlwings') + ['tzdata']
 facturx_datas = collect_data_files('facturx')
 
+# pikepdf embarque une extension compilée (_qpdf) + les DLL qpdf : à collecter
+# explicitement car pikepdf ne fournit pas de hook PyInstaller.
+pikepdf_datas, pikepdf_binaries, pikepdf_hiddenimports = collect_all('pikepdf')
+
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=pikepdf_binaries,
     datas = [
         (str(Path("images/logo.png")), "images"),
-    ] + facturx_datas,
-    hiddenimports=[],
+    ] + facturx_datas + pikepdf_datas,
+    hiddenimports=pikepdf_hiddenimports,
     hookspath=[str(project_path / 'hooks')],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['controller.backends.api'],
     noarchive=False,
     optimize=0,
 )

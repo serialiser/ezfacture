@@ -6,7 +6,9 @@ lxml
 saxonche
 Jinja2
 py-money
-factur-x
+factur-x==5.1
+pikepdf==10.10.0
 pyinstaller
 pandas
 openpyxl
+

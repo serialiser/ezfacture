@@ -356,6 +356,18 @@ class Entity:
         self._party_legal_entity_id = party_legal_entity_id
 
     @property
+    def siren(self):
+        """The 9-digit SIREN derived from the party legal entity id (SIRET).
+
+        Le SIREN correspond aux 9 premiers chiffres du SIRET (14 chiffres).
+        Retourne ``None`` si aucun chiffre n'est disponible.
+        """
+        if self._party_legal_entity_id is None:
+            return None
+        digits = "".join(c for c in str(self._party_legal_entity_id) if c.isdigit())
+        return digits[:9] if len(digits) >= 9 else None
+
+    @property
     def registration_name(self):
         """The registration name of the Entity.
         """

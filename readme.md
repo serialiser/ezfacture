@@ -127,7 +127,7 @@ python build.py
 
 Le script :
 1. exécute `pyinstaller main.spec --clean` ;
-2. copie les dossiers `templates/` et `images/` dans `dist/` ;
+2. copie les dossiers `templates/`, `images/` et `assets/` dans `dist/` ;
 3. copie les fichiers de données `clients.xlsx`, `produits.xlsx`, `config.xlsx` ;
 4. crée les dossiers de travail `brouillons/` et `pdf/`.
 
@@ -142,7 +142,7 @@ pyinstaller main.spec --clean
 
 Puis, **manuellement**, copiez à côté de `dist/ezfacture-<version>.exe` :
 
-- les dossiers `templates/` et `images/`
+- les dossiers `templates/`, `images/` et `assets/`
 - les fichiers `clients.xlsx`, `produits.xlsx`, `config.xlsx`
 - créez les dossiers vides `brouillons/` et `pdf/`
 

@@ -11,7 +11,7 @@ ROOT = Path(__file__).parent
 DIST = ROOT / "dist"
 
 DATA_FILES = ["clients.xlsx", "produits.xlsx", "config.xlsx"]
-FOLDERS_TO_COPY = ["templates", "images"]
+FOLDERS_TO_COPY = ["templates", "images", "assets"]
 DIRS_TO_CREATE = ["brouillons", "pdf"]
 
 

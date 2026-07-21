@@ -37,7 +37,9 @@
                 <ram:LineID>{{ loop.index }}</ram:LineID>
             </ram:AssociatedDocumentLineDocument>
             <ram:SpecifiedTradeProduct>
-                <ram:GlobalID schemeID="GTIN">{{ line.item_id }}</ram:GlobalID>
+                {% if line.item_id %}
+                <ram:GlobalID schemeID="0160">{{ line.item_id }}</ram:GlobalID>
+                {% endif %}
                 <ram:Name>{{ line.item_name }}</ram:Name>
             </ram:SpecifiedTradeProduct>
             <ram:SpecifiedLineTradeAgreement>
@@ -55,7 +57,7 @@
                 <ram:ApplicableTradeTax>
                     <ram:TypeCode>VAT</ram:TypeCode>
                     <ram:CategoryCode>{{ line.tax.category }}</ram:CategoryCode>
-                    <ram:RateApplicablePercent>{{ line.tax.percent }}</ram:RateApplicablePercent>
+                    <ram:RateApplicablePercent>{{ "%.2f"|format(line.tax.percent * 100) }}</ram:RateApplicablePercent>
                 </ram:ApplicableTradeTax>
                 {% if line.discount %}
                 <ram:SpecifiedTradeAllowanceCharge>
@@ -84,9 +86,16 @@
         </ram:IncludedSupplyChainTradeLineItem>
         {% endfor %}
         <ram:ApplicableHeaderTradeAgreement>
+            {% if invoice.buyer_party.reference %}
             <ram:BuyerReference>{{ invoice.buyer_party.reference }}</ram:BuyerReference>
+            {% endif %}
             <ram:SellerTradeParty>
                 <ram:Name>{{ invoice.seller_party.name }}</ram:Name>
+                {% if invoice.seller_party.siren %}
+                <ram:SpecifiedLegalOrganization>
+                    <ram:ID schemeID="0002">{{ invoice.seller_party.siren }}</ram:ID>
+                </ram:SpecifiedLegalOrganization>
+                {% endif %}
                 <ram:PostalTradeAddress>
                     <ram:PostcodeCode>{{ invoice.seller_party.postal_address.postal_zone }}</ram:PostcodeCode>
                     <ram:LineOne>{{ invoice.seller_party.postal_address.address }}</ram:LineOne>
@@ -96,21 +105,24 @@
                     <ram:CityName>{{ invoice.seller_party.postal_address.city_name }}</ram:CityName>
                     <ram:CountryID>{{ invoice.seller_party.postal_address.country }}</ram:CountryID>
                 </ram:PostalTradeAddress>
-
                 {% if invoice.seller_party.mail %}
                 <ram:URIUniversalCommunication>
-                    <ram:URIID>{{ invoice.seller_party.mail }}</ram:URIID>
+                    <ram:URIID schemeID="EM">{{ invoice.seller_party.mail }}</ram:URIID>
                 </ram:URIUniversalCommunication>
                 {% endif %}
-
-                {% if invoice.seller_party.vat_number %}
+                {% if invoice.seller_party.tax_scheme_id %}
                 <ram:SpecifiedTaxRegistration>
-                    <ram:ID schemeID="VA">{{ invoice.seller_party.vat_number }}</ram:ID>
+                    <ram:ID schemeID="VA">{{ invoice.seller_party.tax_scheme_id }}</ram:ID>
                 </ram:SpecifiedTaxRegistration>
                 {% endif %}
             </ram:SellerTradeParty>
             <ram:BuyerTradeParty>
                 <ram:Name>{{ invoice.buyer_party.name }}</ram:Name>
+                {% if invoice.buyer_party.siren %}
+                <ram:SpecifiedLegalOrganization>
+                    <ram:ID schemeID="0002">{{ invoice.buyer_party.siren }}</ram:ID>
+                </ram:SpecifiedLegalOrganization>
+                {% endif %}
                 <ram:PostalTradeAddress>
                     <ram:PostcodeCode>{{ invoice.buyer_party.postal_address.postal_zone }}</ram:PostcodeCode>
                     <ram:LineOne>{{ invoice.buyer_party.postal_address.address }}</ram:LineOne>
@@ -120,29 +132,31 @@
                     <ram:CityName>{{ invoice.buyer_party.postal_address.city_name }}</ram:CityName>
                     <ram:CountryID>{{ invoice.buyer_party.postal_address.country }}</ram:CountryID>
                 </ram:PostalTradeAddress>
-
                 {% if invoice.buyer_party.mail %}
                 <ram:URIUniversalCommunication>
-                    <ram:URIID>{{ invoice.buyer_party.mail }}</ram:URIID>
+                    <ram:URIID schemeID="EM">{{ invoice.buyer_party.mail }}</ram:URIID>
                 </ram:URIUniversalCommunication>
                 {% endif %}
-
-                {% if invoice.buyer_party.vat_number %}
+                {% if invoice.buyer_party.tax_scheme_id %}
                 <ram:SpecifiedTaxRegistration>
-                    <ram:ID schemeID="VA">{{ invoice.buyer_party.vat_number }}</ram:ID>
+                    <ram:ID schemeID="VA">{{ invoice.buyer_party.tax_scheme_id }}</ram:ID>
                 </ram:SpecifiedTaxRegistration>
                 {% endif %}
             </ram:BuyerTradeParty>
         </ram:ApplicableHeaderTradeAgreement>
         <ram:ApplicableHeaderTradeDelivery>
+            {% if invoice.delivery_location %}
             <ram:ShipToTradeParty>
                 <ram:Name>{{ invoice.delivery_location }}</ram:Name>
             </ram:ShipToTradeParty>
+            {% endif %}
+            {% if invoice.delivery_date %}
             <ram:ActualDeliverySupplyChainEvent>
                 <ram:OccurrenceDateTime>
                     <udt:DateTimeString format="102">{{ invoice.delivery_date }}</udt:DateTimeString>
                 </ram:OccurrenceDateTime>
             </ram:ActualDeliverySupplyChainEvent>
+            {% endif %}
         </ram:ApplicableHeaderTradeDelivery>
         <ram:ApplicableHeaderTradeSettlement>
             <ram:InvoiceCurrencyCode>{{ invoice.currency }}</ram:InvoiceCurrencyCode>
@@ -172,13 +186,14 @@
 
             {% for tax in invoice.unique_taxes %}
             <ram:ApplicableTradeTax>
-                <ram:CalculatedAmount currencyID="{{ invoice.currency }}">{{ invoice.tax_amount(tax) }}</ram:CalculatedAmount>
+                <ram:CalculatedAmount>{{ invoice.tax_amount(tax) }}</ram:CalculatedAmount>
                 <ram:TypeCode>VAT</ram:TypeCode>
+                <ram:BasisAmount>{{ invoice.taxable_base(tax) }}</ram:BasisAmount>
                 <ram:CategoryCode>{{ tax.category }}</ram:CategoryCode>
                 {% if tax.debit %}
                 <ram:DueDateTypeCode>5</ram:DueDateTypeCode>
                 {% endif %}
-                <ram:RateApplicablePercent>{{ tax.percent }}</ram:RateApplicablePercent>
+                <ram:RateApplicablePercent>{{ "%.2f"|format(tax.percent * 100) }}</ram:RateApplicablePercent>
             </ram:ApplicableTradeTax>
             {% endfor %}
 
