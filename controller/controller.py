@@ -555,8 +555,12 @@ class Controller:
 
         # ================== AVOIR ==================== #
         if self.doc.type_doc == "avoir":
-            if self.doc.onglet['reference_facture'].value != None:
-                self.model.invoice_reference = self.doc.onglet['reference_facture'].value
+            # BR-FR-CO-05 : un avoir doit référencer la facture d'origine (BT-25)
+            # ET sa date (BT-26). Les deux cellules sont donc obligatoires.
+            self.model.invoice_reference = self.get_value(self.doc.onglet, "reference_facture")
+            self.model.invoice_reference_date = self.get_value(
+                self.doc.onglet, "date_facture_reference", data_type="date"
+            )
 
         # ================= FACTURE =================== #
 
@@ -742,6 +746,19 @@ class Controller:
             logger.exception(f"Erreur mentions légales : {e}")
             raise ValueError(e)
 
+        # Note libre de l'utilisateur (BT-22), lue dans la cellule note_facture / note_avoir
+        # de l'onglet document. Champ facultatif, sans code sujet (BT-21).
+        try:
+            note_key = "note_facture" if self.doc.type_doc == "facture" else "note_avoir"
+            note_libre = self.get_value(self.doc.onglet, note_key, required=False)
+            # on ignore le texte indicatif laissé par défaut dans le template
+            if note_libre and note_libre != "Note de facture":
+                self.model.notes.append({"code": "", "content": note_libre})
+        except BaseException as e:
+            self.view.show_feedback(txt=str(e), message_type="error", stack=True)
+            logger.exception(f"Erreur note document : {e}")
+            raise ValueError(e)
+
         # Validation et création du document
         try:
             with Eztransaction() as tx:
@@ -921,6 +938,7 @@ class Controller:
             if self.doc.type_doc == 'avoir':
                 self.doc.onglet.tables['lignes_avoir'].data_body_range.color = "#ffffff"
                 self.doc.onglet.range('reference_facture').color = "#ffffff"
+                self.doc.onglet.range('date_facture_reference').color = "#ffffff"
                 if self.doc.onglet['note_avoir'].value == "Note de facture":
                     self.doc.onglet['note_avoir'].value = ""
 

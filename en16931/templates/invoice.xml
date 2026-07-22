@@ -24,7 +24,9 @@
             {% for note in invoice.notes %}
         <ram:IncludedNote>
             <ram:Content>{{ note.content }}</ram:Content>
+            {% if note.code %}
             <ram:SubjectCode>{{ note.code }}</ram:SubjectCode>
+            {% endif %}
         </ram:IncludedNote>
             {% endfor %}
         {% endif %}
@@ -225,6 +227,11 @@
             {% if invoice.invoice_type_code == '381' %}
             <ram:InvoiceReferencedDocument>
                 <ram:IssuerAssignedID>{{ invoice.invoice_reference }}</ram:IssuerAssignedID>
+                {% if invoice.invoice_reference_date %}
+                <ram:FormattedIssueDateTime>
+                    <qdt:DateTimeString format="102">{{ invoice.invoice_reference_date }}</qdt:DateTimeString>
+                </ram:FormattedIssueDateTime>
+                {% endif %}
             </ram:InvoiceReferencedDocument>
             {% endif %}
 
