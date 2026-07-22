@@ -1,6 +1,8 @@
 import json
 import logging
+import shutil
 from datetime import datetime
+from pathlib import Path
 
 from config import LOCAL_FILE
 from tools.utils import (
@@ -92,6 +94,44 @@ class LocalBackend(NumberingBackend):
         write_registry_seal(count, entry["self_hash"])
 
         logger.info(f"Facture {entry['number']} validée et écrite dans {LOCAL_FILE}")
+
+        # Sauvegarde de sécurité (best-effort : n'invalide jamais le commit).
+        self._backup()
+
+    def _backup(self):
+        """Copie ``invoices.jsonl`` vers le répertoire indiqué dans la cellule
+        ``config!backup``.
+
+        Best-effort : toute erreur est journalisée et signalée à l'utilisateur
+        mais n'interrompt pas la validation, la facture étant déjà écrite.
+        """
+        try:
+            onglet_config = self.controller.doc.onglet_config
+
+            if self.controller.named_cell_exists("backup", onglet_config):
+                dest_dir = onglet_config["backup"].value
+            else:
+                dest_dir = None
+
+            if dest_dir is None or str(dest_dir).strip() == "":
+                # Cellule 'backup' absente ou vide
+                dest_dir = "."
+
+            dest_dir = Path(str(dest_dir).strip())
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest_file = dest_dir / (Path(LOCAL_FILE).name + ".bak")
+            shutil.copy2(LOCAL_FILE, dest_file)
+            logger.info(f"Sauvegarde de {LOCAL_FILE} vers {dest_file}")
+
+        except Exception as e:
+            msg = f"Échec de la sauvegarde de {LOCAL_FILE} : {e}"
+            logger.warning(msg)
+            try:
+                self.controller.view.show_feedback(
+                    txt=f"Attention : {msg}", message_type="error", stack=True
+                )
+            except Exception:
+                pass
 
     def cancel(self, number):
         # En local, rien à annuler : le numéro n'est jamais écrit avant validation.

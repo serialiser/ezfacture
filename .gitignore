@@ -5,6 +5,7 @@ pdf/
 factures/
 .token_cache
 invoices.jsonl
+invoices.jsonl.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -11,4 +11,4 @@ pikepdf==10.10.0
 pyinstaller
 pandas
 openpyxl
-
+packaging>=24.2

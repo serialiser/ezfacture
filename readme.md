@@ -39,12 +39,10 @@ compteur strictement croissant : le prochain numéro est toujours `dernier + 1`.
 
 ### 1. Le numéro n'est écrit qu'en dernier, une fois tout le reste réussi
 
-La validation d'une facture est **atomique** (transaction « tout ou rien »,
-gérée par `Eztransaction`). Le numéro n'est **inscrit sur disque qu'à l'ultime
-étape**, après que toutes les opérations risquées ont abouti :
+Le numéro n'est **inscrit sur disque qu'à l'ultime étape**, après que toutes les opérations ont abouti :
 
 1. calcul du prochain numéro (`dernier + 1`) — **lecture seule, aucune écriture** ;
-2. génération du XML UBL et contrôle contre le schéma XSD ;
+2. génération du XML et contrôle avec le schéma XSD ;
 3. génération du PDF à partir de la feuille Excel ;
 4. embarquement du XML dans le PDF (Factur-X) ;
 5. **seulement alors**, écriture définitive du numéro dans `invoices.jsonl`.
@@ -52,6 +50,10 @@ gérée par `Eztransaction`). Le numéro n'est **inscrit sur disque qu'à l'ulti
 Si **une seule** de ces étapes échoue (Excel fermé, XML invalide, erreur PDF…),
 la transaction est annulée (rollback) : le numéro **n'a jamais été écrit**. Comme
 rien n'a été consommé, **le même numéro sera réattribué à la tentative suivante**.
+
+A chaque écriture, le fichier `invoices.jsonl` est sauvegardé dans un répertoire à préciser dans le fichier config.xlsx (par défaut même répertoire que l'application).
+
+> N'éditez JAMAIS manuellement le fichier `invoices.jsonl`, il deviendrait corrompu, ce qui bloqurait la production de nouvelles factures.
 
 ### 2. Protection contre les modifications
 
@@ -65,8 +67,7 @@ Pour rendre toute altération **détectable**, chaque entrée est protégée par
 `self_hash`), écrit à chaque validation. Au démarrage, `verify_local_file()`
 recalcule toute la chaîne et la compare au sceau. Supprimer, modifier ou réordonner
 une ligne casse le chaînage : l'application détecte l'incohérence, affiche une
-erreur et **bloque la création de nouveaux documents** tant que le fichier n'est
-pas rétabli.
+erreur et **bloque la création de nouveaux documents** tant que le fichier n'est pas rétabli.
 
 ## Développeurs - utilisation à partir des sources (avec un venv)
 
