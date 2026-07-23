@@ -66,6 +66,8 @@ class InvoiceLine:
         tax_name: str | None = None,
         discount: float | None = None,
         tax_debits: bool = False,
+        exemption_reason: str | None = None,
+        exemption_reason_code: str | None = None,
     ):
         """Initialize an Invoice Line.
 
@@ -127,6 +129,8 @@ class InvoiceLine:
         self._discount = None
         self.discount = discount
         self.tax_debits = tax_debits
+        self.exemption_reason = exemption_reason
+        self.exemption_reason_code = exemption_reason_code
 
     # ------------------- Discount -------------------
 
@@ -188,7 +192,9 @@ class InvoiceLine:
         """Returns a Tax object representing the taxes applied to the line.
         """
         if self.tax_percent is not None and self.tax_category:  # Correction O.M.
-            return Tax(self.tax_percent, self.tax_category, self.tax_name or "")
+            return Tax(self.tax_percent, self.tax_category, self.tax_name or "",
+                       exemption_reason=self.exemption_reason,
+                       exemption_reason_code=self.exemption_reason_code)
         else:
             return None
 

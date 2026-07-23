@@ -16,6 +16,7 @@ from controller import Ezfacture, EzfactureAlreadyExistsError, Eztransaction
 from controller.backends import get_numbering_backend
 from controller.constantes import DRAFT_PATH
 from models import Facture, Entity, InvoiceLine, Devis
+from en16931.tax import FR_FRANCHISE_EN_BASE
 
 from controller.constantes import RANGE_PRINT_AREA
 
@@ -644,6 +645,14 @@ class Controller:
         lines = []
         unique_tax_cat_list = set()
 
+        # Régime de franchise en base de TVA (art. 293 B du CGI) : statut vendeur
+        # global (lu dans regime_tva). Quand il est actif, toutes les lignes sont
+        # exonérées (catégorie E) avec la mention légale et le code VATEX français,
+        # quels que soient la catégorie et le taux saisis dans la ligne.
+        regime_tva_val = str(self.doc.onglet_config['regime_tva'].value or "")
+        franchise_293b = "293" in regime_tva_val
+        fr_cat, fr_code, fr_reason = FR_FRANCHISE_EN_BASE
+
         # ============= Lignes de factures ================= #
 
         for row in rows:
@@ -653,11 +662,15 @@ class Controller:
                 self.view.show_feedback(txt=msg, message_type="error")
                 raise ValueError(msg)
 
-            if not self.check_empty_values(row[0], row[2], row[3], row[4], row[5]):
+            # En franchise, la catégorie (row[5]) et le taux (row[4]) sont ignorés :
+            # on n'exige donc que la désignation, la quantité et le prix.
+            required_cells = (row[0], row[2], row[3]) if franchise_293b \
+                else (row[0], row[2], row[3], row[4], row[5])
+            if not self.check_empty_values(*required_cells):
                 msg = "Erreur dans les lignes de la facture : certaines données sont manquantes."
                 self.view.show_feedback(txt=msg, message_type="error")
                 raise ValueError(msg)
-            
+
             # Les catégories de tax ezfacture contiennent une catégorie supplémentaire "B" permettant de différencier les biens
             # dans la 6ème colonne (masquée) du tableau lignes_facture (row[5]).
             # On doit remettre cette valeur à S dans le xml.
@@ -667,15 +680,25 @@ class Controller:
             price=row[3]
             item_name=row[0]
             currency="EUR"
-            tax_percent=row[4]
-            ez_cat = self.get_tax_code(row[5])
-            tax_name = self.get_tax_name(ez_cat, row[4])  # On définit le nom de la taxe arbitrairement en concaténant la catégorie ezfacture et le pourcentage
             discount=row[6]
 
+            if franchise_293b:
+                # Ligne exonérée : catégorie E, taux 0, mention + code VATEX 293 B.
+                ez_cat = fr_cat
+                tax_percent = 0
+                exemption_reason = fr_reason
+                exemption_reason_code = fr_code
+            else:
+                ez_cat = self.get_tax_code(row[5])
+                tax_percent = row[4]
+                exemption_reason = None
+                exemption_reason_code = None
+
+            tax_name = self.get_tax_name(ez_cat, tax_percent)  # On définit le nom de la taxe arbitrairement en concaténant la catégorie ezfacture et le pourcentage
             unique_tax_cat_list.add(ez_cat)  # pour définir le profil B, S ou M
 
             # Si la config est tva sur les débits et qu'on est sur une ligne de services, on alimente DueDateTypeCode dans le xml
-            if ez_cat == "S" and self.doc.onglet_config['regime_tva'].value.endswith("5"):
+            if ez_cat == "S" and regime_tva_val.endswith("5"):
                 tax_debits = True
             else:
                 tax_debits = False
@@ -691,7 +714,9 @@ class Controller:
                     tax_percent=tax_percent,
                     tax_name=tax_name,
                     discount=discount,
-                    tax_debits=tax_debits
+                    tax_debits=tax_debits,
+                    exemption_reason=exemption_reason,
+                    exemption_reason_code=exemption_reason_code
                 )
                 lines.append(line)
 

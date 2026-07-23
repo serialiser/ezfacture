@@ -442,6 +442,26 @@ class Invoice:
             raise ValueError("Unrecognized date")
 
     @property
+    def deliver_to_country(self):
+        """Code pays de livraison (BT-80) pour une livraison intracommunautaire.
+
+        La règle EN16931 BR-IC-12 impose un code pays « Livraison à »
+        dès qu'une ligne relève de la catégorie de TVA 'K' (livraison
+        intracommunautaire exonérée). On retient par défaut le pays de
+        l'acheteur — l'acquéreur situé dans un autre État membre.
+
+        Retourne ``None`` (aucun ``ShipToTradeParty`` généré) si la facture
+        ne contient aucune ligne 'K' ou si l'acheteur n'est pas renseigné.
+        """
+        has_intracommunity = any(
+            line.tax is not None and line.tax.category == 'K'
+            for line in self.lines
+        )
+        if has_intracommunity and self._buyer_party is not None:
+            return self._buyer_party.postal_address.country
+        return None
+
+    @property
     def seller_party(self):
         """Property: The Entity with the role of AccountingSupplierParty.
 

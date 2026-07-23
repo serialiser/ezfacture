@@ -59,7 +59,9 @@
                 <ram:ApplicableTradeTax>
                     <ram:TypeCode>VAT</ram:TypeCode>
                     <ram:CategoryCode>{{ line.tax.category }}</ram:CategoryCode>
+                    {% if line.tax.has_rate %}
                     <ram:RateApplicablePercent>{{ "%.2f"|format(line.tax.percent * 100) }}</ram:RateApplicablePercent>
+                    {% endif %}
                 </ram:ApplicableTradeTax>
                 {% if line.discount %}
                 <ram:SpecifiedTradeAllowanceCharge>
@@ -147,9 +149,16 @@
             </ram:BuyerTradeParty>
         </ram:ApplicableHeaderTradeAgreement>
         <ram:ApplicableHeaderTradeDelivery>
-            {% if invoice.delivery_location %}
+            {% if invoice.delivery_location or invoice.deliver_to_country %}
             <ram:ShipToTradeParty>
+                {% if invoice.delivery_location %}
                 <ram:Name>{{ invoice.delivery_location }}</ram:Name>
+                {% endif %}
+                {% if invoice.deliver_to_country %}
+                <ram:PostalTradeAddress>
+                    <ram:CountryID>{{ invoice.deliver_to_country }}</ram:CountryID>
+                </ram:PostalTradeAddress>
+                {% endif %}
             </ram:ShipToTradeParty>
             {% endif %}
             {% if invoice.delivery_date %}
@@ -190,12 +199,20 @@
             <ram:ApplicableTradeTax>
                 <ram:CalculatedAmount>{{ invoice.tax_amount(tax) }}</ram:CalculatedAmount>
                 <ram:TypeCode>VAT</ram:TypeCode>
+                {% if tax.exemption_reason %}
+                <ram:ExemptionReason>{{ tax.exemption_reason }}</ram:ExemptionReason>
+                {% endif %}
                 <ram:BasisAmount>{{ invoice.taxable_base(tax) }}</ram:BasisAmount>
                 <ram:CategoryCode>{{ tax.category }}</ram:CategoryCode>
+                {% if tax.exemption_reason_code %}
+                <ram:ExemptionReasonCode>{{ tax.exemption_reason_code }}</ram:ExemptionReasonCode>
+                {% endif %}
                 {% if tax.debit %}
                 <ram:DueDateTypeCode>5</ram:DueDateTypeCode>
                 {% endif %}
+                {% if tax.has_rate %}
                 <ram:RateApplicablePercent>{{ "%.2f"|format(tax.percent * 100) }}</ram:RateApplicablePercent>
+                {% endif %}
             </ram:ApplicableTradeTax>
             {% endfor %}
 
