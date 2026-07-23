@@ -1,6 +1,7 @@
 import os
 import sys
 import gc
+import webbrowser
 from pathlib import Path
 from threading import Thread
 import xlwings as xw
@@ -85,7 +86,6 @@ class Controller:
             "save": self.save_draft_and_pdf,
             "valider": self.validate,
             "transformer": self.transform,
-            "reglages": self.reglages,
             "aide": self.aide,
         }
         self.view.set_actions(actions)
@@ -849,11 +849,8 @@ class Controller:
         )
         self.view.reset_menu_nouveau("Nouveau")
 
-    def reglages(self):
-        pass
-
     def aide(self):
-        pass
+        webbrowser.open("https://www.ezfacture.fr/documentation")
 
     def restart(self):
         self.doc.close()
@@ -880,7 +877,7 @@ class Controller:
                 def _on_success():
                     self.view.menu_nouveau.configure(state="normal")
                     self.view.menu_ouvrir.configure(state="normal")
-                    self.view.enable_boutons(["reglages"])
+                    self.view.enable_boutons(["aide"])
                     self.view.buttons["connexion"].configure(text="Ezfacture prêt...", fg_color="#242424")
                     self.view.buttons["connexion"].configure(state="disabled")
                     self.view.delete_messages("feedback")

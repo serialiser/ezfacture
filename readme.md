@@ -1,7 +1,7 @@
 # EzFacture
 
 Application de facturation pour Windows. Génère des
-factures PDF **Factur-X** à partir de modèles Excel, en embarquant un XML UBL
+factures PDF **Factur-X** à partir de modèles Excel, en embarquant un XML CII
 conforme aux spécifications de l'administration française pour la facturation électronique.
 
 L'application fonctionne entièrement en
@@ -22,7 +22,7 @@ _Peut fonctionner avec des versions plus anciennes, à partir de 2010, mais néc
   - `produits.xlsx` — catalogue produits
   - `config.xlsx` — configuration vendeur (SIRET, TVA, adresse…)
 
-## Utilisation
+## Installation
 * Télécharger la dernière version de l'éxécutable ici : https://github.com/serialiser/ezfacture/releases/.
 * Extraire l'archive sur votre disque dur.  
 * Si vous avez des travaux excel en cours, enregistrez vos document et quittez Excel.
@@ -101,7 +101,6 @@ Pour activer **en plus** le mode API (nécessite le sous-module privé) :
 ```powershell
 pip install -r controller/backends/api/requirements.txt
 ```
-
 
 ### 5. Lancer l'application
 

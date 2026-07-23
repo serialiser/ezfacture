@@ -15,7 +15,7 @@ class AppView(customtkinter.CTk):
 
         customtkinter.set_appearance_mode("dark")
 
-        self.title("Ezfacture excel")
+        self.title("Ezfacture")
         self.geometry(self.window_to_right_bottom("320", "550"))
 
         self.checkbox_frame_connexion = customtkinter.CTkFrame(self, fg_color="#242424")
@@ -68,23 +68,14 @@ class AppView(customtkinter.CTk):
         self.menu_ouvrir.grid(row=1, column=1, padx=5, pady=10, sticky="w")
         self.menu_ouvrir.set("Ouvrir")
 
-        self.buttons["reglages"] = customtkinter.CTkButton(
-            self.checkbox_frame_menu,
-            text="Réglages",
-            command=None,
-            width=15,
-            fg_color="#34495e",
-        )
-        self.buttons["reglages"].grid(row=1, column=2, padx=5, pady=10, sticky="w")
-
         self.buttons["aide"] = customtkinter.CTkButton(
             self.checkbox_frame_menu,
-            text="?",
+            text="Aide",
             command=None,
             width=15,
             fg_color="#34495e",
         )
-        self.buttons["aide"].grid(row=1, column=3, padx=5, pady=10, sticky="w")
+        self.buttons["aide"].grid(row=1, column=2, padx=5, pady=10, sticky="w")
 
         self.checkbox_frame_actions = customtkinter.CTkFrame(self, fg_color="#242424")
         self.checkbox_frame_actions.grid(
@@ -170,12 +161,12 @@ class AppView(customtkinter.CTk):
     def block_ui(self):
         self.menu_nouveau.configure(state="disabled")
         self.menu_ouvrir.configure(state="disabled")
-        self.block_boutons(["save", "valider", "reglages"])
+        self.block_boutons(["save", "valider"])
 
     def enable_ui(self):
         self.menu_nouveau.configure(state="normal")
         self.menu_ouvrir.configure(state="normal")
-        self.enable_boutons(["save", "valider", "reglages"])
+        self.enable_boutons(["save", "valider"])
 
     def block_boutons(self, boutons):
         """
